@@ -16,20 +16,26 @@ from pan_api_client import PANApiClient, get_client_from_env
 import io
 
 def safe_shap_waterfall(shap_values, height=400):
-    """Render SHAP as a dark-themed horizontal bar chart matching the app's design."""
+    """Render SHAP as a sleek dark-themed horizontal bar chart matching the premium UI."""
     vals = shap_values.values
     feats = shap_values.feature_names if hasattr(shap_values, 'feature_names') else [f'F{i}' for i in range(len(vals))]
     order = np.argsort(np.abs(vals))
     fig_h = max(3.5, len(vals) * 0.25)
-    fig, ax = plt.subplots(figsize=(7, fig_h), facecolor='#0d1929')
-    ax.set_facecolor('#081422')
-    colors = ['#22c55e' if v < 0 else '#ef4444' for v in vals[order]]
-    bars = ax.barh([feats[i] for i in order], vals[order], color=colors, height=0.6, edgecolor='none')
-    ax.set_xlabel('SHAP Value (impact on risk)', color='#4a6080', fontsize=9)
-    ax.tick_params(axis='y', colors='#cbd5e1', labelsize=8)
-    ax.tick_params(axis='x', colors='#4a6080', labelsize=8)
-    for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
-    ax.axvline(x=0, color='#4a6080', linewidth=0.5, linestyle='--')
+    
+    # Updated enterprise colors
+    fig, ax = plt.subplots(figsize=(7, fig_h), facecolor='#111827')
+    ax.set_facecolor('#0B1120')
+    colors = ['#10B981' if v < 0 else '#EF4444' for v in vals[order]]
+    
+    bars = ax.barh([feats[i] for i in order], vals[order], color=colors, height=0.5, edgecolor='none', alpha=0.9)
+    ax.set_xlabel('SHAP Value (Impact on Risk)', color='#9CA3AF', fontsize=9, fontweight='500')
+    ax.tick_params(axis='y', colors='#D1D5DB', labelsize=8.5)
+    ax.tick_params(axis='x', colors='#9CA3AF', labelsize=8)
+    
+    for spine in ax.spines.values(): 
+        spine.set_edgecolor('#1F2937')
+        
+    ax.axvline(x=0, color='#4B5563', linewidth=1, linestyle='--')
     plt.tight_layout(pad=1.5)
     st.pyplot(fig)
     plt.close(fig)
@@ -39,202 +45,194 @@ def safe_shap_waterfall(shap_values, height=400):
 #  PAGE CONFIG
 # ─────────────────────────────────────────────
 st.set_page_config(
-    page_title="FinTrust AI | Credit Intelligence Platform",
+    page_title="FinTrust AI | Credit Intelligence",
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="🏦"
 )
 
 # ─────────────────────────────────────────────
-#  GLOBAL CSS  — Dark Premium Theme
+#  GLOBAL CSS  — Modern Premium Fintech Theme
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
 
 /* ── Root Reset ── */
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-.main { background: #0a0f1e; }
-section[data-testid="stSidebar"] > div { background: #070c18; border-right: 1px solid #1a2540; }
-.block-container { padding: 1.5rem 2rem; max-width: 1400px; }
+.main { background: #0B1120; }
+section[data-testid="stSidebar"] > div { background: #0F172A; border-right: 1px solid #1E293B; }
+.block-container { padding: 2rem 3rem; max-width: 1440px; }
 
-/* ── Hide default menu/footer but keep sidebar toggle ── */
+/* ── Hide default menu/footer ── */
 #MainMenu, footer { visibility: hidden; }
 header { background: transparent !important; }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0f1e; }
-::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 3px; }
+::-webkit-scrollbar { width: 6px; } 
+::-webkit-scrollbar-track { background: #0B1120; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* ── Sidebar Logo ── */
 .sidebar-logo {
-    text-align: center; padding: 28px 16px 20px;
-    border-bottom: 1px solid #1a2540; margin-bottom: 16px;
+    text-align: center; padding: 32px 16px 24px;
+    border-bottom: 1px solid #1E293B; margin-bottom: 16px;
 }
-.sidebar-logo .brand { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem;
-    font-weight: 700; color: #f0c040; letter-spacing: -0.5px; }
-.sidebar-logo .tagline { font-size: 0.72rem; color: #4a6080; margin-top: 3px;
-    text-transform: uppercase; letter-spacing: 1.5px; }
+.sidebar-logo .brand { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem;
+    font-weight: 800; background: linear-gradient(135deg, #6366F1, #06B6D4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -0.5px; }
+.sidebar-logo .tagline { font-size: 0.75rem; color: #9CA3AF; margin-top: 4px;
+    text-transform: uppercase; letter-spacing: 1.5px; font-weight: 500;}
 .sidebar-logo .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: #22c55e; margin-right: 6px; animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
-
-/* ── Sidebar Nav Items ── */
-.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px;
-    border-radius: 10px; margin: 4px 0; cursor: pointer; transition: all .2s; color: #7090b0; }
-.nav-item:hover, .nav-item.active { background: rgba(240,192,64,.08); color: #f0c040; }
-.nav-item .icon { font-size: 1.1rem; width: 24px; text-align: center; }
-.nav-item .label { font-size: 0.88rem; font-weight: 500; }
+    background: #10B981; margin-right: 6px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.6;transform:scale(1.2)} }
 
 /* ── KPI Cards ── */
 .kpi-card {
-    background: linear-gradient(135deg, #0d1929 0%, #111d30 100%);
-    border: 1px solid #1a2d4a; border-radius: 16px; padding: 20px 24px;
-    position: relative; overflow: hidden; transition: transform .2s, box-shadow .2s;
+    background: #111827;
+    border: 1px solid #1F2937; border-radius: 16px; padding: 24px;
+    position: relative; overflow: hidden; transition: all .3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
-.kpi-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
-.kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
-    background: linear-gradient(90deg, #f0c040, #e8960c); border-radius: 16px 16px 0 0; }
-.kpi-label { font-size: 0.75rem; color: #4a6080; text-transform: uppercase;
+.kpi-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border-color: #374151; }
+.kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px;
+    background: linear-gradient(90deg, #6366F1, #06B6D4); border-radius: 16px 16px 0 0; opacity: 0.9;}
+.kpi-label { font-size: 0.75rem; color: #9CA3AF; text-transform: uppercase;
     letter-spacing: 1px; font-weight: 600; }
-.kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 2rem;
-    font-weight: 700; color: #e8f0fe; margin: 4px 0; }
-.kpi-sub { font-size: 0.78rem; color: #22c55e; }
-.kpi-icon { position: absolute; right: 20px; top: 20px; font-size: 2rem; opacity: .12; }
+.kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem;
+    font-weight: 700; color: #F3F4F6; margin: 8px 0 4px; line-height: 1.1;}
+.kpi-sub { font-size: 0.8rem; color: #10B981; font-weight: 500; }
+.kpi-icon { position: absolute; right: 24px; top: 24px; font-size: 2rem; opacity: 0.15; filter: grayscale(100%); transition: all .3s; }
+.kpi-card:hover .kpi-icon { opacity: 0.4; filter: grayscale(0%); transform: scale(1.1); }
 
 /* ── Glass Card ── */
 .glass-card {
-    background: rgba(13,25,41,.8); border: 1px solid #1a2d4a;
-    border-radius: 18px; padding: 28px; backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0,0,0,.3);
+    background: rgba(17, 24, 39, 0.7); border: 1px solid #1F2937;
+    border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }
 
 /* ── PAN Input Box ── */
 .pan-box {
-    background: linear-gradient(135deg, #0d1929, #0f2035);
-    border: 2px solid #1a3050; border-radius: 20px; padding: 32px;
-    box-shadow: 0 8px 40px rgba(0,0,0,.4);
+    background: #111827;
+    border: 1px solid #1F2937; border-radius: 16px; padding: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15); margin-bottom: 20px;
 }
-.pan-box h3 { color: #e8f0fe; font-family: 'Space Grotesk', sans-serif; margin: 0 0 6px; }
-.pan-box p { color: #4a6080; font-size: .88rem; margin: 0; }
+.pan-box h3 { color: #F3F4F6; font-family: 'Space Grotesk', sans-serif; margin: 0 0 8px; font-weight: 700; }
+.pan-box p { color: #9CA3AF; font-size: .9rem; margin: 0; }
 
 /* ── Score Display ── */
 .score-ring {
-    background: linear-gradient(135deg, #0d1929, #081422);
-    border: 1px solid #1a3050; border-radius: 20px; padding: 32px;
-    text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,.5);
+    background: #111827;
+    border: 1px solid #1F2937; border-radius: 20px; padding: 36px 24px;
+    text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative; overflow: hidden;
 }
-.score-number { font-family: 'Space Grotesk', sans-serif; font-size: 4.5rem;
-    font-weight: 800; background: linear-gradient(135deg, #f0c040, #e8960c);
+.score-ring::after { content:''; position:absolute; inset:0; background: radial-gradient(circle at top right, rgba(99,102,241,0.05), transparent 60%); pointer-events:none;}
+.score-number { font-family: 'Space Grotesk', sans-serif; font-size: 5rem;
+    font-weight: 800; background: linear-gradient(135deg, #6366F1, #06B6D4);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    line-height: 1; }
-.score-label { font-size: .8rem; color: #4a6080; text-transform: uppercase;
-    letter-spacing: 2px; margin-top: 6px; }
+    line-height: 1; margin: 10px 0; }
+.score-label { font-size: .8rem; color: #9CA3AF; text-transform: uppercase;
+    letter-spacing: 2px; font-weight: 600;}
 
 /* ── Badges ── */
-.badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px;
-    border-radius: 50px; font-weight: 700; font-size: .95rem; margin: 12px 0; }
-.badge-approved { background: linear-gradient(135deg,#065f46,#047857); color: #6ee7b7;
-    border: 1px solid #059669; }
-.badge-review   { background: linear-gradient(135deg,#78350f,#92400e); color: #fcd34d;
-    border: 1px solid #f59e0b; }
-.badge-rejected { background: linear-gradient(135deg,#7f1d1d,#991b1b); color: #fca5a5;
-    border: 1px solid #ef4444; }
+.badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 20px;
+    border-radius: 50px; font-weight: 600; font-size: .85rem; margin: 12px 0; letter-spacing: 0.5px;}
+.badge-approved { background: rgba(16, 185, 129, 0.1); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-review   { background: rgba(245, 158, 11, 0.1); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge-rejected { background: rgba(239, 68, 68, 0.1); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.2); }
 
 /* ── Factor Bars ── */
-.factor-row { margin: 8px 0; }
+.factor-row { margin: 10px 0; }
 .factor-label { display: flex; justify-content: space-between; align-items: center;
-    font-size: .82rem; color: #94a3b8; margin-bottom: 5px; }
-.factor-name { font-weight: 500; color: #cbd5e1; }
-.bar-track { background: #1a2d4a; border-radius: 6px; height: 7px; }
-.bar-fill-red  { background: linear-gradient(90deg,#ef4444,#dc2626); height: 7px;
-    border-radius: 6px; transition: width .6s ease; }
-.bar-fill-green{ background: linear-gradient(90deg,#22c55e,#16a34a); height: 7px;
-    border-radius: 6px; transition: width .6s ease; }
+    font-size: .85rem; color: #9CA3AF; margin-bottom: 6px; }
+.factor-name { font-weight: 500; color: #E5E7EB; }
+.bar-track { background: #1F2937; border-radius: 8px; height: 6px; overflow: hidden; }
+.bar-fill-red  { background: linear-gradient(90deg, #F87171, #EF4444); height: 100%; border-radius: 8px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+.bar-fill-green{ background: linear-gradient(90deg, #34D399, #10B981); height: 100%; border-radius: 8px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
 
 /* ── Tip Card ── */
-.tip-card { background: #0d1929; border: 1px solid #1a3050; border-radius: 14px;
-    padding: 20px; margin: 8px 0; }
-.tip-card h5 { color: #f0c040; margin: 0 0 10px; font-size: .9rem; }
-.tip-card li { color: #94a3b8; font-size: .83rem; margin: 6px 0; }
+.tip-card { background: #111827; border: 1px solid #1F2937; border-radius: 16px;
+    padding: 24px; margin: 8px 0; transition: all 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05);}
+.tip-card:hover { border-color: #374151; transform: translateY(-2px); }
+.tip-card h5 { color: #F3F4F6; margin: 0 0 12px; font-size: 1rem; font-weight: 600; display:flex; align-items:center; gap:8px;}
+.tip-card li { color: #9CA3AF; font-size: .85rem; margin: 8px 0; line-height: 1.5; }
 
-/* ── Demo PAN Buttons ── */
+/* ── Buttons ── */
 .stButton > button {
-    background: linear-gradient(135deg, #0f2035, #1a3050) !important;
-    color: #94a3b8 !important; border: 1px solid #1a3050 !important;
-    border-radius: 10px !important; font-size: .8rem !important;
-    transition: all .2s !important;
+    background: #111827 !important; color: #D1D5DB !important; 
+    border: 1px solid #374151 !important; border-radius: 12px !important; 
+    font-size: .85rem !important; font-weight: 500 !important;
+    transition: all .2s ease !important;
 }
 .stButton > button:hover {
-    border-color: #f0c040 !important; color: #f0c040 !important;
-    box-shadow: 0 0 16px rgba(240,192,64,.2) !important;
+    border-color: #6366F1 !important; color: #FFFFFF !important;
+    background: #1E293B !important;
 }
 
 /* Primary button */
 button[kind="primary"] {
-    background: linear-gradient(135deg, #f0c040, #e8960c) !important;
-    color: #0a0f1e !important; border: none !important;
-    font-weight: 700 !important; font-size: 1rem !important;
-    border-radius: 12px !important; padding: 14px 28px !important;
-    box-shadow: 0 4px 24px rgba(240,192,64,.3) !important;
-    transition: all .2s !important;
+    background: linear-gradient(135deg, #4F46E5, #3B82F6) !important;
+    color: #FFFFFF !important; border: none !important;
+    font-weight: 600 !important; font-size: 1rem !important;
+    border-radius: 12px !important; padding: 12px 24px !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
+    transition: all .3s ease !important;
 }
-button[kind="primary"]:hover { transform: translateY(-2px) !important;
-    box-shadow: 0 8px 32px rgba(240,192,64,.4) !important; }
+button[kind="primary"]:hover { 
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4) !important; 
+}
 
 /* ── Inputs ── */
 .stTextInput > div > div > input, .stNumberInput > div > div > input {
-    background: #0d1929 !important; border: 1px solid #1a3050 !important;
-    color: #e8f0fe !important; border-radius: 10px !important;
+    background: #0B1120 !important; border: 1px solid #374151 !important;
+    color: #F3F4F6 !important; border-radius: 10px !important; padding: 12px 16px !important;
 }
-.stSelectbox > div > div { background: #0d1929 !important; border: 1px solid #1a3050 !important; border-radius: 10px !important; }
-.stSlider > div { color: #e8f0fe !important; }
+.stTextInput > div > div > input:focus, .stNumberInput > div > div > input:focus {
+    border-color: #6366F1 !important; box-shadow: 0 0 0 1px #6366F1 !important;
+}
+.stSelectbox > div > div { background: #0B1120 !important; border: 1px solid #374151 !important; border-radius: 10px !important; }
+.stSlider > div { color: #F3F4F6 !important; }
 
 /* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] { background: #0d1929 !important;
-    border-radius: 12px !important; padding: 4px !important;
-    border: 1px solid #1a2d4a !important; gap: 0 !important; }
-.stTabs [data-baseweb="tab"] { color: #4a6080 !important; font-weight: 600 !important;
-    border-radius: 8px !important; flex: 1 !important; justify-content: center !important; }
-.stTabs [aria-selected="true"] { background: linear-gradient(135deg,#1a3050,#1e3a5f) !important;
-    color: #f0c040 !important; }
+.stTabs [data-baseweb="tab-list"] { background: #111827 !important;
+    border-radius: 14px !important; padding: 6px !important;
+    border: 1px solid #1F2937 !important; gap: 4px !important; }
+.stTabs [data-baseweb="tab"] { color: #9CA3AF !important; font-weight: 500 !important;
+    border-radius: 10px !important; flex: 1 !important; justify-content: center !important; 
+    padding: 10px 16px !important; transition: all 0.2s !important; }
+.stTabs [data-baseweb="tab"]:hover { color: #F3F4F6 !important; background: #1E293B !important; }
+.stTabs [aria-selected="true"] { background: #1E293B !important; color: #FFFFFF !important; box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;}
 
 /* ── Expander ── */
-.streamlit-expanderHeader { background: #0d1929 !important; color: #94a3b8 !important;
-    border-radius: 10px !important; border: 1px solid #1a2d4a !important; }
-
-/* ── Metrics ── */
-[data-testid="metric-container"] { background: #0d1929 !important;
-    border: 1px solid #1a2d4a !important; border-radius: 12px !important;
-    padding: 16px !important; }
-[data-testid="metric-container"] label { color: #4a6080 !important; }
-[data-testid="metric-container"] [data-testid="metric-value"] { color: #f0c040 !important; }
-
-/* ── Info/Success/Warning/Error boxes ── */
-.stAlert { border-radius: 12px !important; border: none !important; }
-
-/* ── Dataframe ── */
-.dataframe { background: #0d1929 !important; color: #94a3b8 !important; }
+.streamlit-expanderHeader { background: #111827 !important; color: #D1D5DB !important;
+    border-radius: 12px !important; border: 1px solid #1F2937 !important; font-weight: 500 !important; }
+.streamlit-expanderContent { border: 1px solid #1F2937 !important; border-top: none !important; border-radius: 0 0 12px 12px !important; }
 
 /* ── Section divider ── */
-.section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem;
-    font-weight: 700; color: #e8f0fe; display: flex; align-items: center; gap: 10px;
-    margin: 24px 0 16px; padding-bottom: 10px;
-    border-bottom: 1px solid #1a2d4a; }
+.section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem;
+    font-weight: 700; color: #F3F4F6; display: flex; align-items: center; gap: 10px;
+    margin: 32px 0 20px; padding-bottom: 12px;
+    border-bottom: 1px solid #1F2937; }
 
 /* ── Sidebar Steps ── */
-.step-item { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0;
-    border-bottom: 1px solid #111d30; }
-.step-num { min-width: 28px; height: 28px; background: linear-gradient(135deg,#f0c040,#e8960c);
+.step-item { display: flex; align-items: flex-start; gap: 14px; padding: 12px 0;
+    border-bottom: 1px dashed #1E293B; }
+.step-item:last-child { border-bottom: none; }
+.step-num { min-width: 28px; height: 28px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: .78rem; color: #0a0f1e; }
-.step-text { font-size: .82rem; color: #4a6080; line-height: 1.5; }
-.step-text strong { color: #94a3b8; }
+    font-weight: 700; font-size: .8rem; color: #818CF8; }
+.step-text { font-size: .85rem; color: #9CA3AF; line-height: 1.5; }
+.step-text strong { color: #E5E7EB; font-weight: 600; display: block; margin-bottom: 2px;}
 
 /* ── Table override ── */
-table { border-collapse: collapse; width: 100%; }
-th { background: #0d1929 !important; color: #f0c040 !important; padding: 8px 12px !important; }
-td { background: #081422 !important; color: #94a3b8 !important; padding: 6px 12px !important; }
+table { border-collapse: collapse; width: 100%; border-radius: 12px; overflow: hidden; }
+th { background: #1F2937 !important; color: #F3F4F6 !important; padding: 12px 16px !important; font-weight: 600 !important; font-size: 0.85rem !important;}
+td { background: #111827 !important; color: #D1D5DB !important; padding: 10px 16px !important; font-size: 0.85rem !important; border-bottom: 1px solid #1F2937 !important; }
+tr:last-child td { border-bottom: none !important; }
 
 </style>
 """, unsafe_allow_html=True)
@@ -246,8 +244,8 @@ with st.sidebar:
     st.markdown("""
     <div class="sidebar-logo">
         <div class="brand">🏦 FinTrust AI</div>
-        <div class="tagline">Credit Intelligence Platform</div>
-        <div style="margin-top:10px;font-size:.78rem;color:#4a6080;">
+        <div class="tagline">Credit Intelligence</div>
+        <div style="margin-top:12px;font-size:.75rem;color:#9CA3AF;font-weight:500;display:flex;align-items:center;justify-content:center;">
             <span class="dot"></span>Live System Active
         </div>
     </div>
@@ -255,53 +253,37 @@ with st.sidebar:
 
     st.markdown("""
     <div style="padding:0 8px 16px;">
-        <div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-left:8px;">Quick Links</div>
-        <div style="font-size:.8rem;color:#4a6080;padding:8px;background:#050a12;border-radius:8px;border:1px solid #111d30;">
-            Use the <span style="color:#f0c040;font-weight:600;">tabs above</span> to switch between:<br><br>
-            🆔 Credit Score Check<br>
-            👤 Underwriter Dashboard<br>
-            🌍 Portfolio Analytics<br>
-            ⚖️ Fairness Audit<br>
-            🎮 What-If Simulator
-        </div>
+        <div style="font-size:.7rem;color:#64748B;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:600;">How It Works</div>
+        <div class="step-item"><div class="step-num">1</div><div class="step-text"><strong>Enter PAN</strong>Your 10-digit identity number</div></div>
+        <div class="step-item"><div class="step-num">2</div><div class="step-text"><strong>Bureau Fetch</strong>Secure profile retrieval</div></div>
+        <div class="step-item"><div class="step-num">3</div><div class="step-text"><strong>AI Evaluation</strong>Ensemble evaluates 20+ factors</div></div>
+        <div class="step-item"><div class="step-num">4</div><div class="step-text"><strong>Instant Report</strong>Score breakdown & XAI audit</div></div>
     </div>
-    <hr style="border:1px solid #111d30;margin:0 0 16px;">
+    <hr style="border:none; border-top:1px solid #1E293B; margin:8px 0 20px;">
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="padding:0 8px;">
-        <div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;padding-left:8px;">How It Works</div>
-        <div class="step-item"><div class="step-num">1</div><div class="step-text"><strong>Enter PAN</strong><br>Your 10-digit PAN card number</div></div>
-        <div class="step-item"><div class="step-num">2</div><div class="step-text"><strong>Bureau Fetch</strong><br>AI retrieves your credit profile</div></div>
-        <div class="step-item"><div class="step-num">3</div><div class="step-text"><strong>Model Scores</strong><br>Ensemble AI evaluates 20 factors</div></div>
-        <div class="step-item"><div class="step-num">4</div><div class="step-text"><strong>Instant Report</strong><br>Get CIBIL score + XAI breakdown</div></div>
+    <div style="padding:16px;background:#111827;border-radius:14px;border:1px solid #1F2937;">
+        <div style="font-size:.7rem;color:#64748B;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:600;">Model Arsenal</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
+            <span style="font-size:.8rem;color:#D1D5DB;font-weight:500;">XGBoost</span>
+            <span style="font-size:.7rem;color:#10B981;background:rgba(16,185,129,0.1);padding:2px 8px;border-radius:12px;border:1px solid rgba(16,185,129,0.2);">Active</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
+            <span style="font-size:.8rem;color:#D1D5DB;font-weight:500;">LightGBM</span>
+            <span style="font-size:.7rem;color:#10B981;background:rgba(16,185,129,0.1);padding:2px 8px;border-radius:12px;border:1px solid rgba(16,185,129,0.2);">Active</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
+            <span style="font-size:.8rem;color:#D1D5DB;font-weight:500;">Random Forest</span>
+            <span style="font-size:.7rem;color:#10B981;background:rgba(16,185,129,0.1);padding:2px 8px;border-radius:12px;border:1px solid rgba(16,185,129,0.2);">Active</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px dashed #334155;font-size:.7rem;color:#9CA3AF;text-align:center;">Best model auto-selected by AUC-ROC</div>
     </div>
-    <hr style="border:1px solid #111d30;margin:16px 0;">
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style="padding:12px 8px;background:#050a12;border-radius:12px;border:1px solid #111d30;">
-        <div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">Model Arsenal</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0;">
-            <span style="font-size:.78rem;color:#4a6080;">XGBoost</span>
-            <span style="font-size:.75rem;color:#22c55e;font-weight:600;">Active</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0;">
-            <span style="font-size:.78rem;color:#4a6080;">LightGBM</span>
-            <span style="font-size:.75rem;color:#22c55e;font-weight:600;">Active</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin:6px 0;">
-            <span style="font-size:.78rem;color:#4a6080;">Random Forest</span>
-            <span style="font-size:.75rem;color:#22c55e;font-weight:600;">Active</span>
-        </div>
-        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #111d30;font-size:.72rem;color:#2a3a50;text-align:center;">Best model auto-selected by AUC-ROC</div>
-    </div>
-    <div style="margin-top:20px;text-align:center;font-size:.68rem;color:#2a3a50;">v2.0 · FinTrust AI Platform<br>© 2026 All rights reserved</div>
     """, unsafe_allow_html=True)
 
     # ── API Provider Configuration ──
-    st.markdown('<hr style="border:1px solid #111d30;margin:12px 0;">', unsafe_allow_html=True)
-    st.markdown('<div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;padding-left:8px;margin-bottom:8px;">Bureau API Settings</div>', unsafe_allow_html=True)
+    st.markdown('<hr style="border:none; border-top:1px solid #1E293B; margin:24px 0 16px;">', unsafe_allow_html=True)
+    st.markdown('<div style="font-size:.7rem;color:#64748B;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;font-weight:600;">Bureau Settings</div>', unsafe_allow_html=True)
 
     api_provider = st.selectbox(
         "Data Provider",
@@ -309,16 +291,17 @@ with st.sidebar:
         index=0,
         help="Select your credit bureau API provider. Use 'mock' for demo/testing."
     )
-    provider_key = api_provider.split()[0]   # strip " (sandbox)"
+    provider_key = api_provider.split()[0]
 
     api_key_val = ""
     api_secret_val = ""
     if provider_key != "mock":
         api_key_val    = st.text_input("API Key / Client ID",    type="password", placeholder="Enter API key")
-        api_secret_val = st.text_input("API Secret / Client Secret", type="password", placeholder="Enter secret (if needed)")
-        st.caption("🔒 Keys are never stored or transmitted beyond this session.")
+        api_secret_val = st.text_input("API Secret", type="password", placeholder="Enter secret (if needed)")
+        st.caption("🔒 Keys are never stored beyond this session.")
+        
+    st.markdown('<div style="margin-top:30px;text-align:center;font-size:.7rem;color:#64748B;">v2.0 · FinTrust AI Platform<br>© 2026 All rights reserved</div>', unsafe_allow_html=True)
 
-    # Build the client — used in Tab 1
     @st.cache_resource
     def build_api_client(prov, key, secret):
         return PANApiClient(prov, api_key=key, secret=secret)
@@ -334,10 +317,6 @@ def load_data():
     p = os.path.join(base_path, 'data', 'processed_credit_data.csv')
     return pd.read_csv(p) if os.path.exists(p) else None
 
-# @st.cache_resource
-# def load_model():
-#     with open('model.pkl', 'rb') as f:
-#         return pickle.load(f)
 @st.cache_resource
 def load_model():
     base_path = os.path.dirname(__file__)
@@ -399,31 +378,33 @@ def pan_to_features(pan):
 def cibil(p): return int(900 - p * 600)
 
 def grade(s):
-    if s >= 750: return "EXCELLENT", "#22c55e", "badge-approved", "✅"
-    if s >= 650: return "GOOD",      "#f0c040", "badge-review",   "✦"
-    if s >= 550: return "FAIR",      "#f97316", "badge-review",   "⚠️"
-    return            "POOR",        "#ef4444", "badge-rejected",  "❌"
+    if s >= 750: return "EXCELLENT", "#10B981", "badge-approved", "✅" # Emerald
+    if s >= 650: return "GOOD",      "#3B82F6", "badge-review",   "✦" # Blue
+    if s >= 550: return "FAIR",      "#F59E0B", "badge-review",   "⚠️" # Amber
+    return            "POOR",        "#EF4444", "badge-rejected",  "❌" # Red
 
 # ─────────────────────────────────────────────
 #  TOP HEADER
 # ─────────────────────────────────────────────
 st.markdown("""
 <div style="display:flex;align-items:center;justify-content:space-between;
-            padding:22px 32px;background:linear-gradient(135deg,#0d1929 0%,#111d30 100%);
-            border-radius:18px;border:1px solid #1a2d4a;margin-bottom:24px;
-            box-shadow:0 8px 40px rgba(0,0,0,.5);">
+            padding:28px 36px;background:#111827;
+            border-radius:20px;border:1px solid #1F2937;margin-bottom:32px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.15);">
     <div>
-        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.7rem;font-weight:800;
-                    color:#e8f0fe;letter-spacing:-0.5px;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:800;
+                    color:#F3F4F6;letter-spacing:-0.5px; margin-bottom: 4px;">
             Credit Intelligence Platform
         </div>
-        <div style="font-size:.85rem;color:#4a6080;margin-top:4px;">
+        <div style="font-size:.9rem;color:#9CA3AF;font-weight:500;">
             Powered by Explainable AI · Real-time Bureau Integration · RBI Compliant
         </div>
     </div>
-    <div style="text-align:right;">
-        <div style="font-size:.75rem;color:#22c55e;font-weight:600;letter-spacing:1px;">● SYSTEM ONLINE</div>
-        <div style="font-size:.7rem;color:#2a3a50;margin-top:2px;">Model Accuracy: 82.5% · AUC: 0.84</div>
+    <div style="text-align:right; background: #0B1120; padding: 12px 20px; border-radius: 12px; border: 1px solid #1E293B;">
+        <div style="font-size:.75rem;color:#10B981;font-weight:700;letter-spacing:1px; margin-bottom: 4px; display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+            <span style="display:inline-block;width:6px;height:6px;background:#10B981;border-radius:50%;"></span> SYSTEM ONLINE
+        </div>
+        <div style="font-size:.75rem;color:#9CA3AF;">Model Accuracy: <span style="color:#F3F4F6;font-weight:600;">82.5%</span> · AUC: <span style="color:#F3F4F6;font-weight:600;">0.84</span></div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -443,11 +424,10 @@ tab_pan, tab_under, tab_global, tab_fair, tab_sim = st.tabs([
 #  TAB 1 — PAN CARD CREDIT CHECK
 # ══════════════════════════════════════════════
 with tab_pan:
-    # ── Demo PAN quick-fill
     st.markdown("""<div class="section-title">🆔 Instant Credit Score — PAN Card Lookup</div>""", unsafe_allow_html=True)
 
     demo_row = st.columns(4)
-    demo_pans = [("ABCDE1234F","✅ High Score"),("PQRST5678U","🟡 Medium"),("MNOPQ9012R","🔴 Low Score"),("XYZAB3456C","🎲 Random")]
+    demo_pans = [("ABCDE1234F","✅ High Score"),("PQRST5678U","🔵 Medium"),("MNOPQ9012R","🔴 Low Score"),("XYZAB3456C","🎲 Random")]
     for i,(dpan,dlbl) in enumerate(demo_pans):
         with demo_row[i]:
             if st.button(f"{dlbl}\n`{dpan}`", key=f"demo{i}", use_container_width=True):
@@ -459,8 +439,8 @@ with tab_pan:
 
     with left_col:
         st.markdown("""<div class="pan-box">
-            <h3>🪪 Enter PAN Details</h3>
-            <p>Bureau lookup is instant and encrypted</p>
+            <h3>🪪 Enter Applicant Details</h3>
+            <p>Bureau lookup is instant, encrypted, and leaves no footprint.</p>
         </div>""", unsafe_allow_html=True)
 
         pan_val = st.session_state.get('pan','')
@@ -500,17 +480,14 @@ with tab_pan:
                     st.error(f"❌ Invalid PAN: `{pan_input}` — Expected format: `ABCDE1234F`")
                     st.stop()
 
-                # ── Fetch profile via bureau API ──────────
                 with st.spinner(f"🔄 Fetching bureau data via **{pan_api_client.provider.upper()}**..."):
                     profile = pan_api_client.get_credit_profile(pan_input)
 
-                # Show API error if any (still continue — fallback data is usable)
                 if profile.error:
                     st.warning(f"⚠️ Bureau API note: {profile.error} — using simulated fallback data.")
 
                 feats = profile.to_model_input()
 
-                # Override with manual entries if requested
                 if use_ov:
                     feats['duration']         = ov_dur
                     feats['credit_amount']    = ov_amt
@@ -540,43 +517,40 @@ with tab_pan:
 
             r = st.session_state.get('result')
             if r:
-                # ── Bureau source badge ────────────────────
                 src = r.get('profile_source','mock')
-                src_color = '#22c55e' if src == 'perfios' else ('#f0c040' if src in ['setu','karza'] else '#4a6080')
-                verified_txt = '✅ PAN Verified' if r.get('pan_verified') else '⚠️ Unverified'
-                name_txt = r.get('profile_name','') or ''
+                src_color = '#10B981' if src == 'perfios' else ('#6366F1' if src in ['setu','karza'] else '#64748B')
+                verified_txt = '✅ Verified identity' if r.get('pan_verified') else '⚠️ Unverified'
+                name_txt = r.get('profile_name','') or 'Unknown Individual'
+                
                 st.markdown(f'''
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;
-                            background:#050a12;border:1px solid #1a2d4a;border-radius:10px;padding:10px 16px;">
-                    <span style="font-size:.78rem;color:{src_color};font-weight:700;text-transform:uppercase;
-                                 background:rgba(0,0,0,.3);padding:3px 10px;border-radius:20px;
-                                 border:1px solid {src_color}33;">● {src}</span>
-                    <span style="font-size:.83rem;color:#94a3b8;">{name_txt}</span>
-                    <span style="font-size:.78rem;color:#22c55e;margin-left:auto;">{verified_txt}</span>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;
+                            background:#111827;border:1px solid #1F2937;border-radius:12px;padding:12px 20px;">
+                    <span style="font-size:.75rem;color:{src_color};font-weight:700;text-transform:uppercase;
+                                 background:rgba(255,255,255,.05);padding:4px 12px;border-radius:20px;
+                                 border:1px solid {src_color}33;letter-spacing:1px;">● {src}</span>
+                    <span style="font-size:.9rem;color:#F3F4F6;font-weight:500;">{name_txt}</span>
+                    <span style="font-size:.8rem;color:#10B981;margin-left:auto;font-weight:500;">{verified_txt}</span>
                 </div>
                 ''', unsafe_allow_html=True)
 
-                # Show Perfios BSA analytics if available
                 if r.get('monthly_income') and r['monthly_income'] > 0:
                     pa1, pa2, pa3 = st.columns(3)
                     pa1.metric("Monthly Income", f"₹{r['monthly_income']:,.0f}")
-                    pa2.metric("FOIR", f"{r['foir']:.1f}%", help="Fixed Obligation to Income Ratio — lower is better")
+                    pa2.metric("FOIR", f"{r['foir']:.1f}%", help="Fixed Obligation to Income Ratio")
                     pa3.metric("Risk Band", r.get('risk_band','—') or '—')
 
-                # ── Score + Badge
                 s_col, g_col = st.columns([1, 1.4])
                 with s_col:
                     st.markdown(f"""
                     <div class="score-ring">
                         <div class="score-label">CIBIL SCORE</div>
                         <div class="score-number">{r['score']}</div>
-                        <div style="font-size:.85rem;color:{r['color']};font-weight:700;margin-top:8px;">{r['icon']} {r['grade']}</div>
-                        <div class="score-label" style="margin-top:4px;">Range: 300 – 900</div>
+                        <div style="font-size:.9rem;color:{r['color']};font-weight:700;margin-top:4px;">{r['icon']} {r['grade']}</div>
                         <div style="margin-top:16px;"><span class="{r['badge']} badge">
                             {'✅ AUTO-APPROVED' if r['score']>=750 else ('⚠️ MANUAL REVIEW' if r['score']>=600 else '❌ REJECTED')}
                         </span></div>
-                        <div style="font-size:.75rem;color:#2a3a50;margin-top:12px;">
-                            Default Risk: <span style="color:{r['color']};font-weight:600;">{round(float(r['prob'])*100,2)}%</span>
+                        <div style="font-size:.8rem;color:#9CA3AF;margin-top:16px;padding-top:16px;border-top:1px solid #1F2937;">
+                            Default Risk: <span style="color:{r['color']};font-weight:700;">{round(float(r['prob'])*100,2)}%</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -585,30 +559,29 @@ with tab_pan:
                     fig = go.Figure(go.Indicator(
                         mode="gauge+number",
                         value=r['score'],
-                        number={'font':{'size':44,'color':'#f0c040','family':'Space Grotesk'}},
+                        number={'font':{'size':48,'color':r['color'],'family':'Space Grotesk'}},
                         gauge={
-                            'axis':{'range':[300,900],'tickcolor':'#1a2d4a','tickwidth':1,
-                                    'tickvals':[300,450,600,750,900],'tickfont':{'color':'#4a6080','size':11}},
-                            'bar':{'color':'#f0c040','thickness':0.22},
-                            'bgcolor':'#081422',
+                            'axis':{'range':[300,900],'tickcolor':'#374151','tickwidth':1,
+                                    'tickvals':[300,450,600,750,900],'tickfont':{'color':'#9CA3AF','size':12}},
+                            'bar':{'color':r['color'],'thickness':0.25},
+                            'bgcolor':'#111827',
                             'borderwidth':0,
                             'steps':[
-                                {'range':[300,550],'color':'#1f1015'},
-                                {'range':[550,650],'color':'#1a1a0f'},
-                                {'range':[650,750],'color':'#0f1a0f'},
-                                {'range':[750,900],'color':'#0a1f10'},
+                                {'range':[300,550],'color':'rgba(239, 68, 68, 0.1)'},
+                                {'range':[550,650],'color':'rgba(245, 158, 11, 0.1)'},
+                                {'range':[650,750],'color':'rgba(59, 130, 246, 0.1)'},
+                                {'range':[750,900],'color':'rgba(16, 185, 129, 0.1)'},
                             ],
                         }
                     ))
                     fig.update_layout(
-                        height=260, paper_bgcolor='rgba(0,0,0,0)',
+                        height=280, paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)',
-                        font={'family':'Inter','color':'#e8f0fe'},
-                        margin=dict(l=20,r=20,t=30,b=10)
+                        font={'family':'Inter','color':'#F3F4F6'},
+                        margin=dict(l=20,r=20,t=40,b=10)
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
-                # ── KPI row
                 k1,k2,k3,k4 = st.columns(4)
                 k_data = [
                     ("Credit Score", r['score'], "300–900 range", "🎯"),
@@ -622,10 +595,9 @@ with tab_pan:
                         <div class="kpi-icon">{ico}</div>
                         <div class="kpi-label">{lbl}</div>
                         <div class="kpi-value">{val}</div>
-                        <div class="kpi-sub">{sub}</div>
+                        <div class="kpi-sub" style="color:#64748B;">{sub}</div>
                     </div>""", unsafe_allow_html=True)
 
-                # ── SHAP XAI
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown('<div class="section-title">🧠 AI Decision Justification (XAI)</div>', unsafe_allow_html=True)
 
@@ -637,36 +609,35 @@ with tab_pan:
 
                 xc1, xc2 = st.columns(2)
                 with xc1:
-                    st.markdown('<div style="font-size:.88rem;font-weight:600;color:#ef4444;margin-bottom:12px;">🔴 Risk Amplifiers</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="font-size:.9rem;font-weight:600;color:#F87171;margin-bottom:16px;">🔴 Risk Amplifiers (Negative Impact)</div>', unsafe_allow_html=True)
                     for _,row in contrib.head(4).iterrows():
                         bp = min(100, int(abs(row['Impact'])*800))
                         st.markdown(f"""
                         <div class="factor-row">
                             <div class="factor-label">
                                 <span class="factor-name">{row['Feature']}</span>
-                                <span style="color:#ef4444;font-weight:600;">+{row['Impact']:.3f}</span>
+                                <span style="color:#F87171;font-weight:600;">+{row['Impact']:.3f}</span>
                             </div>
                             <div class="bar-track"><div class="bar-fill-red" style="width:{bp}%"></div></div>
                         </div>""", unsafe_allow_html=True)
 
                 with xc2:
-                    st.markdown('<div style="font-size:.88rem;font-weight:600;color:#22c55e;margin-bottom:12px;">🟢 Protective Factors</div>', unsafe_allow_html=True)
+                    st.markdown('<div style="font-size:.9rem;font-weight:600;color:#34D399;margin-bottom:16px;">🟢 Protective Factors (Positive Impact)</div>', unsafe_allow_html=True)
                     for _,row in contrib.tail(4).iterrows():
                         bp = min(100, int(abs(row['Impact'])*800))
                         st.markdown(f"""
                         <div class="factor-row">
                             <div class="factor-label">
                                 <span class="factor-name">{row['Feature']}</span>
-                                <span style="color:#22c55e;font-weight:600;">{row['Impact']:.3f}</span>
+                                <span style="color:#34D399;font-weight:600;">{row['Impact']:.3f}</span>
                             </div>
                             <div class="bar-track"><div class="bar-fill-green" style="width:{bp}%"></div></div>
                         </div>""", unsafe_allow_html=True)
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                with st.expander("📊 Detailed SHAP Waterfall Chart"):
+                with st.expander("📊 View Detailed SHAP Waterfall Chart"):
                     safe_shap_waterfall(sv[0], height=420)
 
-                # ── Bureau snapshot
                 st.markdown('<div class="section-title">📋 Bureau Data Snapshot</div>', unsafe_allow_html=True)
                 snap_labels = {
                     'checking_status':'Checking Account','duration':'Loan Duration (mo.)',
@@ -681,12 +652,11 @@ with tab_pan:
                 ])
                 st.dataframe(snap_df.set_index('Field'), use_container_width=True)
 
-                # ── Improvement Tips
                 st.markdown('<div class="section-title">💡 Score Improvement Roadmap</div>', unsafe_allow_html=True)
                 t1,t2,t3 = st.columns(3)
                 with t1:
                     st.markdown("""<div class="tip-card">
-                        <h5>⚡ Quick Wins (0–3 months)</h5>
+                        <h5>⚡ Quick Wins <span style="font-size:0.75rem; color:#64748B; font-weight:normal;">(0–3 mos)</span></h5>
                         <ul>
                             <li>Pay all dues before due date</li>
                             <li>Clear outstanding balances</li>
@@ -695,7 +665,7 @@ with tab_pan:
                     </div>""", unsafe_allow_html=True)
                 with t2:
                     st.markdown("""<div class="tip-card">
-                        <h5>📈 Mid Term (3–12 months)</h5>
+                        <h5>📈 Mid Term <span style="font-size:0.75rem; color:#64748B; font-weight:normal;">(3–12 mos)</span></h5>
                         <ul>
                             <li>Keep credit utilization &lt;30%</li>
                             <li>Avoid multiple loan applications</li>
@@ -704,7 +674,7 @@ with tab_pan:
                     </div>""", unsafe_allow_html=True)
                 with t3:
                     st.markdown("""<div class="tip-card">
-                        <h5>🏆 Long Term (1–3 years)</h5>
+                        <h5>🏆 Long Term <span style="font-size:0.75rem; color:#64748B; font-weight:normal;">(1–3 yrs)</span></h5>
                         <ul>
                             <li>Build diversified credit mix</li>
                             <li>Keep old accounts active</li>
@@ -714,28 +684,27 @@ with tab_pan:
 
         else:
             st.markdown("""
-            <div class="glass-card" style="text-align:center;padding:80px 40px;">
-                <div style="font-size:4rem;margin-bottom:20px;">🪪</div>
-                <div style="font-family:'Space Grotesk',sans-serif;font-size:1.6rem;
-                            font-weight:700;color:#e8f0fe;margin-bottom:12px;">
-                    Enter PAN to Get Started
+            <div class="glass-card" style="text-align:center;padding:100px 40px;">
+                <div style="font-size:4.5rem;margin-bottom:24px; opacity:0.8;">🪪</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-size:1.8rem;
+                            font-weight:700;color:#F3F4F6;margin-bottom:16px;">
+                    Awaiting Applicant PAN
                 </div>
-                <div style="color:#4a6080;font-size:.9rem;max-width:380px;margin:0 auto;line-height:1.7;">
-                    Your AI-powered credit report will appear here. Enter your PAN card number
-                    or click a demo button on the left.
+                <div style="color:#9CA3AF;font-size:.95rem;max-width:420px;margin:0 auto;line-height:1.6;">
+                    The applicant's AI-powered credit intelligence report will appear here. Enter a PAN card number or use a demo profile from the top left.
                 </div>
-                <div style="margin-top:32px;display:flex;justify-content:center;gap:32px;">
+                <div style="margin-top:40px;display:flex;justify-content:center;gap:48px;">
                     <div style="text-align:center;">
-                        <div style="font-size:1.8rem;font-weight:800;color:#f0c040;font-family:'Space Grotesk'">20</div>
-                        <div style="font-size:.72rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1px;">Features</div>
+                        <div style="font-size:2rem;font-weight:800;background: linear-gradient(135deg, #6366F1, #06B6D4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family:'Space Grotesk'">20</div>
+                        <div style="font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:4px;">Features</div>
                     </div>
                     <div style="text-align:center;">
-                        <div style="font-size:1.8rem;font-weight:800;color:#f0c040;font-family:'Space Grotesk'">4</div>
-                        <div style="font-size:.72rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1px;">AI Models</div>
+                        <div style="font-size:2rem;font-weight:800;background: linear-gradient(135deg, #6366F1, #06B6D4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family:'Space Grotesk'">4</div>
+                        <div style="font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:4px;">AI Models</div>
                     </div>
                     <div style="text-align:center;">
-                        <div style="font-size:1.8rem;font-weight:800;color:#f0c040;font-family:'Space Grotesk'">&lt;1s</div>
-                        <div style="font-size:.72rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1px;">Response</div>
+                        <div style="font-size:2rem;font-weight:800;background: linear-gradient(135deg, #6366F1, #06B6D4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family:'Space Grotesk'">&lt;1s</div>
+                        <div style="font-size:.75rem;color:#64748B;text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-top:4px;">Latency</div>
                     </div>
                 </div>
             </div>
@@ -749,7 +718,7 @@ with tab_under:
         st.warning("⚠️ Dataset not found. Please run `train_model.py` first.")
     else:
         st.markdown('<div class="section-title">👤 Individual Applicant Analysis</div>', unsafe_allow_html=True)
-        idx = st.slider("Select Applicant ID", 0, len(X)-1, 0)
+        idx = st.slider("Select Applicant ID from Database", 0, len(X)-1, 0)
         app_data = X.iloc[[idx]]
         prob_u = model.predict_proba(app_data)[0][1]
         score_u = cibil(prob_u)
@@ -767,44 +736,46 @@ with tab_under:
                 <div class="kpi-icon">{ico}</div>
                 <div class="kpi-label">{lbl}</div>
                 <div class="kpi-value">{val}</div>
-                <div class="kpi-sub">Applicant #{idx}</div>
+                <div class="kpi-sub" style="color:#64748B;">Applicant #{idx}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        p1, p2 = st.columns([1,1.5])
+        p1, p2 = st.columns([1,1.5], gap="large")
         with p1:
-            st.markdown(f'<div class="section-title">Profile Data</div>', unsafe_allow_html=True)
-            st.dataframe(app_data.T.rename(columns={idx:"Value"}), use_container_width=True, height=380)
+            st.markdown(f'<div class="section-title">Raw Profile Data</div>', unsafe_allow_html=True)
+            st.dataframe(app_data.T.rename(columns={idx:"Value"}), use_container_width=True, height=420)
         with p2:
             st.markdown('<div class="section-title">Risk Gauge</div>', unsafe_allow_html=True)
             fig_u = go.Figure(go.Indicator(
                 mode="gauge+number", value=score_u,
-                number={'font':{'color':'#f0c040','size':40,'family':'Space Grotesk'}},
+                number={'font':{'color':c_u,'size':56,'family':'Space Grotesk'}},
                 gauge={
-                    'axis':{'range':[300,900],'tickvals':[300,450,600,750,900],'tickfont':{'color':'#4a6080','size':11}},
-                    'bar':{'color':'#f0c040','thickness':0.22},
-                    'bgcolor':'#081422','borderwidth':0,
+                    'axis':{'range':[300,900],'tickvals':[300,450,600,750,900],'tickfont':{'color':'#9CA3AF','size':12}},
+                    'bar':{'color':c_u,'thickness':0.25},
+                    'bgcolor':'#111827','borderwidth':0,
                     'steps':[
-                        {'range':[300,550],'color':'#1f1015'},
-                        {'range':[550,650],'color':'#1a1a0f'},
-                        {'range':[650,750],'color':'#0f1a0f'},
-                        {'range':[750,900],'color':'#0a1f10'},
+                        {'range':[300,550],'color':'rgba(239, 68, 68, 0.1)'},
+                        {'range':[550,650],'color':'rgba(245, 158, 11, 0.1)'},
+                        {'range':[650,750],'color':'rgba(59, 130, 246, 0.1)'},
+                        {'range':[750,900],'color':'rgba(16, 185, 129, 0.1)'},
                     ]
                 }
             ))
-            fig_u.update_layout(height=300,paper_bgcolor='rgba(0,0,0,0)',
-                font={'family':'Inter','color':'#e8f0fe'},margin=dict(l=20,r=20,t=40,b=10))
+            fig_u.update_layout(height=340,paper_bgcolor='rgba(0,0,0,0)',
+                font={'family':'Inter','color':'#F3F4F6'},margin=dict(l=20,r=20,t=40,b=10))
             st.plotly_chart(fig_u, use_container_width=True)
-            st.markdown(f'<div style="text-align:center;"><span class="{b_u} badge">{i_u} {g_u}</span></div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;"><span class="{b_u} badge" style="font-size:1rem; padding:10px 24px;">{i_u} {g_u}</span></div>', unsafe_allow_html=True)
 
         st.markdown('<div class="section-title">🧠 SHAP Explanation</div>', unsafe_allow_html=True)
         sv_u = shap_vals_global[idx].values
         cont_u = pd.DataFrame({'Feature':X.columns,'Impact':sv_u}).sort_values('Impact',ascending=False)
         top2r = cont_u.head(2); top1s = cont_u.tail(1)
-        st.info(f"**AI Summary**: Applicant #{idx} has a **{round(float(prob_u)*100,2)}%** default probability. "
-                f"Key risk drivers: **{top2r.iloc[0]['Feature']}** and **{top2r.iloc[1]['Feature']}**. "
-                f"Strongest mitigant: **{top1s.iloc[0]['Feature']}**.")
-        with st.expander("📊 SHAP Waterfall"):
+        
+        st.info(f"**AI Summary:** Applicant #{idx} has a **{round(float(prob_u)*100,2)}%** default probability. "
+                f"The primary risk drivers increasing this probability are **{top2r.iloc[0]['Feature']}** and **{top2r.iloc[1]['Feature']}**. "
+                f"The strongest mitigating factor is **{top1s.iloc[0]['Feature']}**.")
+                
+        with st.expander("📊 View SHAP Waterfall"):
             safe_shap_waterfall(shap_vals_global[idx], height=400)
 
 # ══════════════════════════════════════════════
@@ -821,61 +792,59 @@ with tab_global:
 
         pm1,pm2,pm3,pm4 = st.columns(4)
         for col_p,(lbl,val,sub,ico) in zip([pm1,pm2,pm3,pm4],[
-            ("Total Applicants", len(X), "In portfolio", "📁"),
+            ("Total Applicants", len(X), "In portfolio database", "📁"),
             ("Model Accuracy", f"{acc}%", "Test set performance","🎯"),
-            ("Approval Rate", f"{approval}%", "Good credit", "✅"),
-            ("Default Rate", f"{round(100-approval,2)}%", "High risk","⚠️"),
+            ("Approval Rate", f"{approval}%", "Low risk predicted", "✅"),
+            ("Default Rate", f"{round(100-approval,2)}%", "High risk predicted","⚠️"),
         ]):
             col_p.markdown(f"""<div class="kpi-card">
                 <div class="kpi-icon">{ico}</div>
                 <div class="kpi-label">{lbl}</div>
                 <div class="kpi-value">{val}</div>
-                <div class="kpi-sub">{sub}</div>
+                <div class="kpi-sub" style="color:#64748B;">{sub}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         ga,gb = st.columns(2)
         with ga:
             st.markdown('<div class="section-title">Top Risk Drivers (Global)</div>', unsafe_allow_html=True)
-            plt.figure(facecolor='#0d1929')
-            shap.summary_plot(shap_vals_global, X, plot_type="bar", show=False,
-                              color='#f0c040', plot_size=None)
+            plt.figure(facecolor='#111827')
+            shap.summary_plot(shap_vals_global, X, plot_type="bar", show=False, color='#6366F1')
             fig_g1 = plt.gcf()
-            fig_g1.set_facecolor('#0d1929')
+            fig_g1.set_facecolor('#111827')
             for ax in fig_g1.axes:
-                ax.set_facecolor('#081422')
-                ax.tick_params(colors='#4a6080')
-                ax.xaxis.label.set_color('#4a6080')
-                for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+                ax.set_facecolor('#0B1120')
+                ax.tick_params(colors='#9CA3AF')
+                ax.xaxis.label.set_color('#9CA3AF')
+                for spine in ax.spines.values(): spine.set_edgecolor('#1F2937')
             st.pyplot(fig_g1)
             plt.close(fig_g1)
 
         with gb:
             st.markdown('<div class="section-title">Directional Impact (Beeswarm)</div>', unsafe_allow_html=True)
-            plt.figure(facecolor='#0d1929')
-            shap.summary_plot(shap_vals_global, X, show=False, plot_size=None)
+            plt.figure(facecolor='#111827')
+            shap.summary_plot(shap_vals_global, X, show=False)
             fig_g2 = plt.gcf()
-            fig_g2.set_facecolor('#0d1929')
+            fig_g2.set_facecolor('#111827')
             for ax in fig_g2.axes:
-                ax.set_facecolor('#081422')
-                ax.tick_params(colors='#4a6080')
-                ax.xaxis.label.set_color('#4a6080')
-                for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+                ax.set_facecolor('#0B1120')
+                ax.tick_params(colors='#9CA3AF')
+                ax.xaxis.label.set_color('#9CA3AF')
+                for spine in ax.spines.values(): spine.set_edgecolor('#1F2937')
             st.pyplot(fig_g2)
             plt.close(fig_g2)
 
-        # Score distribution
-        st.markdown('<div class="section-title">Score Distribution</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Score Distribution Matrix</div>', unsafe_allow_html=True)
         probs_all = model.predict_proba(X)[:,1]
         scores_all = [cibil(p) for p in probs_all]
         fig_dist = px.histogram(x=scores_all, nbins=40,
-            labels={'x':'CIBIL Score','y':'Count'},
-            color_discrete_sequence=['#f0c040'])
+            labels={'x':'CIBIL Score','y':'Applicant Count'},
+            color_discrete_sequence=['#6366F1'])
         fig_dist.update_layout(
-            paper_bgcolor='#0d1929', plot_bgcolor='#081422',
-            font={'color':'#94a3b8','family':'Inter'},
-            xaxis={'gridcolor':'#1a2d4a'}, yaxis={'gridcolor':'#1a2d4a'},
-            margin=dict(l=20,r=20,t=20,b=20), height=300
+            paper_bgcolor='#0B1120', plot_bgcolor='#111827',
+            font={'color':'#9CA3AF','family':'Inter'},
+            xaxis={'gridcolor':'#1F2937'}, yaxis={'gridcolor':'#1F2937'},
+            margin=dict(l=20,r=20,t=20,b=20), height=350
         )
         st.plotly_chart(fig_dist, use_container_width=True)
 
@@ -887,7 +856,7 @@ with tab_fair:
         st.warning("⚠️ Dataset not found. Please run `train_model.py` first.")
     else:
         st.markdown('<div class="section-title">⚖️ AI Fairness & Regulatory Compliance</div>', unsafe_allow_html=True)
-        st.markdown('<div style="font-size:.88rem;color:#4a6080;margin-bottom:20px;">Ensuring compliance with Equal Credit Opportunity Act (ECOA) · RBI Fair Lending Standards</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:.9rem;color:#9CA3AF;margin-bottom:24px;">Ensuring compliance with Equal Credit Opportunity Act (ECOA) & RBI Fair Lending Standards.</div>', unsafe_allow_html=True)
 
         sf = (df['age'] < 25).astype(int)
         yt = df['target']
@@ -899,7 +868,7 @@ with tab_fair:
         fa1.metric("Demographic Parity Diff", f"{round(dp*100,2)}%", delta=None)
         fa2.metric("Model Accuracy", f"{acc_f}%")
         fa3.metric("Under-25 Flag", "HIGH RISK" if dp > 0.1 else "COMPLIANT",
-                   delta="Action Required" if dp > 0.1 else "Passed")
+                   delta="Action Required" if dp > 0.1 else "Passed", delta_color="inverse" if dp > 0.1 else "normal")
 
         st.markdown("<br>", unsafe_allow_html=True)
         if dp > 0.1:
@@ -907,10 +876,9 @@ with tab_fair:
             **Required Actions:** Apply fairness constraints (Fairlearn reweighing) before production deployment.""")
         else:
             st.success("""✅ **Audit Passed** — Model demonstrates equitable approval rates across all age demographics.  
-            Demographic parity difference is within acceptable RBI thresholds (<10%).""")
+            Demographic parity difference is within acceptable regulatory thresholds (<10%).""")
 
-        # Age-split analysis
-        st.markdown('<div class="section-title">Age Group Analysis</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Age Group Approval Breakdown</div>', unsafe_allow_html=True)
         df_audit = df.copy()
         df_audit['predicted'] = yp
         df_audit['age_group'] = pd.cut(df_audit['age'], bins=[0,25,35,50,100],
@@ -930,13 +898,12 @@ with tab_fair:
 with tab_sim:
     st.markdown('<div class="section-title">🎮 What-If Scenario Simulator</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div style="font-size:.88rem;color:#4a6080;margin-bottom:20px;">'
+        '<div style="font-size:.9rem;color:#9CA3AF;margin-bottom:24px; line-height:1.6;">'
         'Adjust any credit factor below and instantly see how your CIBIL score changes. '
-        'Find the <b style="color:#f0c040;">exact actions</b> needed to move to the next grade.'
+        'Find the <b style="color:#6366F1;">exact actions</b> needed to move to the next grade.'
         '</div>', unsafe_allow_html=True
     )
 
-    # ── Seed from last PAN result if available, else use neutral defaults
     if 'result' in st.session_state:
         base_feats = dict(st.session_state['result']['feats'])
         base_score = st.session_state['result']['score']
@@ -954,14 +921,14 @@ with tab_sim:
         }
         base_prob  = model.predict_proba(pd.DataFrame([base_feats]))[0][1]
         base_score = cibil(base_prob)
-        seed_label = "Using default profile — check a PAN first for a personalised simulation"
+        seed_label = "Using default profile — check a PAN first for a personalized simulation"
 
     st.info(f"📌 **Baseline:** {seed_label}  |  **Score:** {base_score}", icon="📊")
 
     sim_left, sim_right = st.columns([1.2, 1], gap="large")
 
     with sim_left:
-        st.markdown('<div style="font-size:.9rem;font-weight:600;color:#e8f0fe;margin-bottom:12px;">🎚️ Adjust Credit Factors</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:.95rem;font-weight:600;color:#F3F4F6;margin-bottom:16px;">🎚️ Adjust Credit Factors</div>', unsafe_allow_html=True)
 
         feature_configs = {
             'checking_status': {'label': '🏦 Checking Account Status', 'type': 'select',
@@ -1005,7 +972,7 @@ with tab_sim:
                 'help': 'More valuable collateral = lower lender risk.'},
             'personal_status': {'label': '👤 Personal Status', 'type': 'select',
                 'options': ['Male Divorced/Sep', 'Female Div/Dep/Mar', 'Male Single', 'Male Mar/Wid'],
-                'help': 'Demographic factor from German Credit dataset.'},
+                'help': 'Demographic factor.'},
             'other_parties': {'label': '🤝 Other Parties (Guarantor)', 'type': 'select',
                 'options': ['None', 'Co-Applicant', 'Guarantor (best)'],
                 'help': 'Having a guarantor reduces lender risk.'},
@@ -1017,7 +984,7 @@ with tab_sim:
                 'help': 'Registered phone is a positive stability signal.'},
             'foreign_worker': {'label': '🌐 Foreign Worker Status', 'type': 'select',
                 'options': ['Yes', 'No'],
-                'help': 'Non-foreign workers have lower default rates in this dataset.'},
+                'help': 'Dataset specific demographic factor.'},
         }
 
         sim_feats = {}
@@ -1036,7 +1003,6 @@ with tab_sim:
                 sim_feats[feat_key] = opts.index(sel)
 
     with sim_right:
-        # Live prediction — columns MUST match training order
         FEATURE_ORDER = [
             'checking_status', 'duration', 'credit_history', 'purpose',
             'credit_amount', 'savings_status', 'employment', 'installment_commitment',
@@ -1054,9 +1020,8 @@ with tab_sim:
         delta      = sim_score - base_score
         delta_prob = round((sim_prob - base_prob) * 100, 1)
         arrow      = "▲" if delta > 0 else ("▼" if delta < 0 else "─")
-        d_color    = "#22c55e" if delta > 0 else ("#ef4444" if delta < 0 else "#4a6080")
+        d_color    = "#10B981" if delta > 0 else ("#EF4444" if delta < 0 else "#64748B")
 
-        # Before / After cards
         st.markdown('<div class="section-title">📊 Before vs After</div>', unsafe_allow_html=True)
         ba1, ba2, ba3 = st.columns([1, 0.4, 1])
         with ba1:
@@ -1064,94 +1029,89 @@ with tab_sim:
             st.markdown(f"""
             <div class="score-ring" style="padding:20px;">
                 <div class="score-label">BASELINE</div>
-                <div class="score-number" style="font-size:2.8rem;color:#4a6080;">{base_score}</div>
-                <div style="font-size:.82rem;color:{bc};font-weight:700;margin-top:6px;">{bi} {bg}</div>
+                <div class="score-number" style="font-size:2.8rem;background:none;-webkit-text-fill-color:{bc};">{base_score}</div>
+                <div style="font-size:.85rem;color:{bc};font-weight:700;margin-top:6px;">{bi} {bg}</div>
             </div>""", unsafe_allow_html=True)
         with ba2:
             st.markdown(f"""
             <div style="display:flex;flex-direction:column;align-items:center;
                         justify-content:center;height:100%;padding-top:40px;">
-                <div style="font-size:2.2rem;color:{d_color};font-weight:800;">{arrow}</div>
-                <div style="font-size:1rem;font-weight:800;color:{d_color};">
+                <div style="font-size:2.2rem;color:{d_color};font-weight:800;line-height:1;">{arrow}</div>
+                <div style="font-size:1.1rem;font-weight:800;color:{d_color}; margin-top:4px;">
                     {'+' if delta>=0 else ''}{delta}</div>
-                <div style="font-size:.68rem;color:#2a3a50;">pts</div>
+                <div style="font-size:.7rem;color:#64748B;font-weight:600;letter-spacing:1px;text-transform:uppercase;">pts</div>
             </div>""", unsafe_allow_html=True)
         with ba3:
             st.markdown(f"""
             <div class="score-ring" style="padding:20px;border-color:{sim_color}33;">
                 <div class="score-label">NEW SCORE</div>
-                <div class="score-number" style="font-size:2.8rem;color:{sim_color};">{sim_score}</div>
-                <div style="font-size:.82rem;color:{sim_color};font-weight:700;margin-top:6px;">{sim_ico} {sim_g}</div>
+                <div class="score-number" style="font-size:2.8rem;background:none;-webkit-text-fill-color:{sim_color};">{sim_score}</div>
+                <div style="font-size:.85rem;color:{sim_color};font-weight:700;margin-top:6px;">{sim_ico} {sim_g}</div>
             </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Risk progress bar
         st.markdown(f"""
-        <div style="background:#0d1929;border:1px solid #1a2d4a;border-radius:12px;padding:16px 20px;">
-            <div style="display:flex;justify-content:space-between;font-size:.82rem;
-                        color:#4a6080;margin-bottom:8px;">
-                <span>Default Risk</span>
+        <div style="background:#111827;border:1px solid #1F2937;border-radius:14px;padding:20px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display:flex;justify-content:space-between;font-size:.85rem;
+                        color:#9CA3AF;margin-bottom:12px;font-weight:500;">
+                <span>Default Risk Profile</span>
                 <span style="color:{d_color};font-weight:700;">
                     {round(sim_prob*100,1)}%
                     ({'+' if delta_prob>=0 else ''}{delta_prob}%)
                 </span>
             </div>
-            <div style="background:#1a2d4a;border-radius:6px;height:10px;">
+            <div style="background:#1F2937;border-radius:8px;height:12px;overflow:hidden;">
                 <div style="background:{sim_color};width:{min(100,int(sim_prob*100))}%;
-                            height:10px;border-radius:6px;"></div>
+                            height:100%;border-radius:8px;transition:width 0.5s ease;"></div>
             </div>
         </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # Decision verdict
         if sim_score >= 750:
-            st.success("✅ **AUTO-APPROVED** — Excellent creditworthiness!")
+            st.success("✅ **AUTO-APPROVED** — Excellent creditworthiness profile.")
         elif sim_score >= 600:
-            st.warning("⚠️ **MANUAL REVIEW** — Good but needs underwriter check.")
+            st.warning("⚠️ **MANUAL REVIEW** — Good profile, but requires underwriter check.")
         else:
-            st.error("❌ **REJECTED** — High default risk profile.")
+            st.error("❌ **REJECTED** — High default risk threshold exceeded.")
 
-        # Changes made list
         changed = {k: (base_feats.get(k,0), sim_feats[k])
                    for k in sim_feats if sim_feats[k] != base_feats.get(k,0)}
         if changed:
-            st.markdown('<div class="section-title" style="font-size:.95rem;margin-top:16px;">🔄 Changes Made</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title" style="font-size:1rem;margin-top:24px;">🔄 Parameter Deltas</div>', unsafe_allow_html=True)
             for feat, (old_v, new_v) in changed.items():
                 lbl = feature_configs[feat]['label']
                 up  = new_v > old_v
-                cc  = "#22c55e" if up else "#ef4444"
+                cc  = "#10B981" if up else "#EF4444"
                 ci  = "↑" if up else "↓"
                 st.markdown(f"""
                 <div style="display:flex;justify-content:space-between;align-items:center;
-                            background:#0d1929;border:1px solid #1a2d4a;border-radius:8px;
-                            padding:7px 14px;margin:3px 0;font-size:.81rem;">
-                    <span style="color:#94a3b8;">{lbl}</span>
+                            background:#111827;border:1px solid #1F2937;border-radius:10px;
+                            padding:10px 16px;margin:6px 0;font-size:.85rem;">
+                    <span style="color:#D1D5DB;font-weight:500;">{lbl}</span>
                     <span>
-                        <span style="color:#4a6080;">{old_v}</span>
-                        <span style="color:#2a3a50;margin:0 5px;">→</span>
+                        <span style="color:#64748B;">{old_v}</span>
+                        <span style="color:#475569;margin:0 8px;">→</span>
                         <span style="color:{cc};font-weight:700;">{new_v} {ci}</span>
                     </span>
                 </div>""", unsafe_allow_html=True)
         else:
-            st.markdown('<div style="color:#2a3a50;font-size:.84rem;text-align:center;padding:20px;">← Move any slider to see live changes</div>', unsafe_allow_html=True)
+            st.markdown('<div style="color:#64748B;font-size:.85rem;text-align:center;padding:24px;border:1px dashed #1E293B;border-radius:12px;">← Move any slider to see live impact on score</div>', unsafe_allow_html=True)
 
-        # SHAP before/after (in expander to keep layout clean)
-        with st.expander("🧠 SHAP Breakdown — Before vs After"):
+        with st.expander("🧠 XAI Breakdown — Before vs After"):
             xai_exp = shap.TreeExplainer(model)
             sv_base = xai_exp(pd.DataFrame([base_feats]))
             sv_sim  = xai_exp(sim_idf)
             sc1, sc2 = st.columns(2)
             with sc1:
-                st.caption("**Baseline**")
+                st.caption("**Baseline Configuration**")
                 safe_shap_waterfall(sv_base[0], height=340)
             with sc2:
-                st.caption("**After Changes**")
+                st.caption("**Simulated Configuration**")
                 safe_shap_waterfall(sv_sim[0],  height=340)
 
-        # Auto-recommendations
-        st.markdown('<div class="section-title" style="font-size:.95rem;margin-top:16px;">💡 Top Actions to Improve</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title" style="font-size:1rem;margin-top:24px;">💡 Top Actions to Improve</div>', unsafe_allow_html=True)
         recs = []
         if sim_feats['savings_status'] < 3:
             recs.append(("💰 Increase Savings", "Move savings to ₹100–₹500+ band. Reduces risk significantly."))
@@ -1165,18 +1125,21 @@ with tab_sim:
             recs.append(("🏦 Maintain Positive Balance", "Keep checking account in positive balance consistently."))
         if sim_feats['installment_commitment'] > 2:
             recs.append(("📊 Lower EMI Burden", "Consolidate or prepay existing loans to reduce commitment."))
+        
         if not recs:
             recs.append(("🏆 Profile is Strong!", "Maintain consistency for a great credit score."))
+            
         for i, (title, desc) in enumerate(recs[:4]):
             st.markdown(f"""
-            <div style="display:flex;gap:12px;align-items:flex-start;
-                        background:#0d1929;border:1px solid #1a2d4a;border-radius:10px;
-                        padding:12px 14px;margin:5px 0;">
-                <div style="min-width:22px;height:22px;background:linear-gradient(135deg,#f0c040,#e8960c);
+            <div style="display:flex;gap:14px;align-items:flex-start;
+                        background:#111827;border:1px solid #1F2937;border-radius:12px;
+                        padding:16px;margin:8px 0;box-shadow:0 2px 4px rgba(0,0,0,0.05);">
+                <div style="min-width:26px;height:26px;background:rgba(99, 102, 241, 0.1);
+                            border: 1px solid rgba(99, 102, 241, 0.3);
                             border-radius:50%;display:flex;align-items:center;justify-content:center;
-                            font-weight:800;font-size:.72rem;color:#0a0f1e;">{i+1}</div>
+                            font-weight:700;font-size:.8rem;color:#818CF8;">{i+1}</div>
                 <div>
-                    <div style="font-weight:600;color:#f0c040;font-size:.84rem;">{title}</div>
-                    <div style="color:#4a6080;font-size:.79rem;margin-top:3px;">{desc}</div>
+                    <div style="font-weight:600;color:#F3F4F6;font-size:.9rem;margin-bottom:4px;">{title}</div>
+                    <div style="color:#9CA3AF;font-size:.85rem;line-height:1.4;">{desc}</div>
                 </div>
             </div>""", unsafe_allow_html=True)
