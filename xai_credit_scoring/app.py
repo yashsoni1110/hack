@@ -16,24 +16,24 @@ from pan_api_client import PANApiClient, get_client_from_env
 import io
 
 def safe_shap_waterfall(shap_values, height=400):
-    """Render SHAP waterfall safely — falls back to bar chart if waterfall bugs out."""
-    try:
-        st_shap(shap.plots.waterfall(shap_values), height=height)
-    except (IndexError, TypeError, AttributeError):
-        vals = shap_values.values
-        feats = shap_values.feature_names if hasattr(shap_values, 'feature_names') else [f'F{i}' for i in range(len(vals))]
-        order = np.argsort(np.abs(vals))
-        fig, ax = plt.subplots(figsize=(6, max(4, len(vals)*0.28)), facecolor='#0d1929')
-        ax.set_facecolor('#081422')
-        colors = ['#22c55e' if v < 0 else '#ef4444' for v in vals[order]]
-        ax.barh([feats[i] for i in order], vals[order], color=colors, height=0.6)
-        ax.set_xlabel('SHAP Value (impact on risk)', color='#4a6080', fontsize=9)
-        ax.tick_params(colors='#94a3b8', labelsize=8)
-        for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
-        ax.axvline(x=0, color='#4a6080', linewidth=0.5)
-        plt.tight_layout()
-        st.pyplot(fig)
-        plt.close(fig)
+    """Render SHAP as a dark-themed horizontal bar chart matching the app's design."""
+    vals = shap_values.values
+    feats = shap_values.feature_names if hasattr(shap_values, 'feature_names') else [f'F{i}' for i in range(len(vals))]
+    order = np.argsort(np.abs(vals))
+    fig_h = max(3.5, len(vals) * 0.25)
+    fig, ax = plt.subplots(figsize=(7, fig_h), facecolor='#0d1929')
+    ax.set_facecolor('#081422')
+    colors = ['#22c55e' if v < 0 else '#ef4444' for v in vals[order]]
+    bars = ax.barh([feats[i] for i in order], vals[order], color=colors, height=0.6, edgecolor='none')
+    ax.set_xlabel('SHAP Value (impact on risk)', color='#4a6080', fontsize=9)
+    ax.tick_params(axis='y', colors='#cbd5e1', labelsize=8)
+    ax.tick_params(axis='x', colors='#4a6080', labelsize=8)
+    for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+    ax.axvline(x=0, color='#4a6080', linewidth=0.5, linestyle='--')
+    plt.tight_layout(pad=1.5)
+    st.pyplot(fig)
+    plt.close(fig)
+
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -483,8 +483,8 @@ with tab_pan:
                 ov_amt = st.number_input("Credit Amount (₹)", 500, 200000, 10000, 500)
                 ov_age = st.slider("Age (override)", 18, 80, 35)
             with a2:
-                ov_chk = st.selectbox("Checking Account",["No Account","<0 DM","0–200 DM",">200 DM"])
-                ov_sav = st.selectbox("Savings Account",["No Savings","<100 DM","100–500 DM","500–1000 DM",">1000 DM"])
+                ov_chk = st.selectbox("Checking Account",["No Account","< ₹0","₹0–₹200","> ₹200"])
+                ov_sav = st.selectbox("Savings Account",["No Savings","< ₹100","₹100–₹500","₹500–₹1000","> ₹1000"])
                 ov_emp = st.selectbox("Employment Duration",["Unemployed","<1 Yr","1–4 Yr","4–7 Yr",">7 Yr"])
             use_ov = st.checkbox("Use my manual entries", value=False)
 
@@ -515,8 +515,8 @@ with tab_pan:
                     feats['duration']         = ov_dur
                     feats['credit_amount']    = ov_amt
                     feats['age']             = ov_age
-                    feats['checking_status'] = ["No Account","<0 DM","0–200 DM",">200 DM"].index(ov_chk)
-                    feats['savings_status']  = ["No Savings","<100 DM","100–500 DM","500–1000 DM",">1000 DM"].index(ov_sav)
+                    feats['checking_status'] = ["No Account","< ₹0","₹0–₹200","> ₹200"].index(ov_chk)
+                    feats['savings_status']  = ["No Savings","< ₹100","₹100–₹500","₹500–₹1000","> ₹1000"].index(ov_sav)
                     feats['employment']      = ["Unemployed","<1 Yr","1–4 Yr","4–7 Yr",">7 Yr"].index(ov_emp)
                 else:
                     feats['age'] = u_age if not profile.name or profile.name == "Unknown" else profile.to_model_input()['age']
@@ -965,13 +965,13 @@ with tab_sim:
 
         feature_configs = {
             'checking_status': {'label': '🏦 Checking Account Status', 'type': 'select',
-                'options': ['No Account (worst)', '< 0 DM (negative)', '0–200 DM (ok)', '> 200 DM (best)'],
+                'options': ['No Account (worst)', '< ₹0 (negative)', '₹0–₹200 (ok)', '> ₹200 (best)'],
                 'help': 'Higher is better. A healthy checking account lowers risk.'},
             'credit_history': {'label': '📜 Credit History Quality', 'type': 'select',
                 'options': ['Critical/Other Account', 'No Credits Taken', 'All Paid Duly', 'Existing Paid', 'All Paid (best)'],
                 'help': 'Past repayment behaviour. 4 = perfect history.'},
             'savings_status': {'label': '💰 Savings Account Balance', 'type': 'select',
-                'options': ['No Savings (worst)', '< 100 DM', '100–500 DM', '500–1000 DM', '> 1000 DM (best)'],
+                'options': ['No Savings (worst)', '< ₹100', '₹100–₹500', '₹500–₹1000', '> ₹1000 (best)'],
                 'help': 'More savings = lower default risk.'},
             'employment': {'label': '💼 Employment Duration', 'type': 'select',
                 'options': ['Unemployed (worst)', '< 1 Year', '1–4 Years', '4–7 Years', '> 7 Years (best)'],
@@ -1154,7 +1154,7 @@ with tab_sim:
         st.markdown('<div class="section-title" style="font-size:.95rem;margin-top:16px;">💡 Top Actions to Improve</div>', unsafe_allow_html=True)
         recs = []
         if sim_feats['savings_status'] < 3:
-            recs.append(("💰 Increase Savings", "Move savings to 100–500+ DM band. Reduces risk significantly."))
+            recs.append(("💰 Increase Savings", "Move savings to ₹100–₹500+ band. Reduces risk significantly."))
         if sim_feats['credit_history'] < 4:
             recs.append(("📜 Build Credit History", "Pay all dues on time for 6–12 months to reach 'All Paid' status."))
         if sim_feats['duration'] > 24:
@@ -1162,7 +1162,7 @@ with tab_sim:
         if sim_feats['credit_amount'] > 8000:
             recs.append(("💳 Reduce Loan Amount", f"Request ₹{sim_feats['credit_amount']-2000:,} instead of ₹{sim_feats['credit_amount']:,}."))
         if sim_feats['checking_status'] < 2:
-            recs.append(("🏦 Maintain Positive Balance", "Keep checking account above 0 DM consistently."))
+            recs.append(("🏦 Maintain Positive Balance", "Keep checking account in positive balance consistently."))
         if sim_feats['installment_commitment'] > 2:
             recs.append(("📊 Lower EMI Burden", "Consolidate or prepay existing loans to reduce commitment."))
         if not recs:
