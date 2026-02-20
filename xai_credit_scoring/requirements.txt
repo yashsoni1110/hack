@@ -9,3 +9,6 @@ plotly
 streamlit-shap
 fairlearn
 matplotlib
+requests
+flask
+flask-cors

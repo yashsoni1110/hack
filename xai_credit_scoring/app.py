@@ -13,6 +13,27 @@ from fairlearn.metrics import demographic_parity_difference
 from sklearn.metrics import accuracy_score, confusion_matrix
 import re, hashlib, json, os, time
 from pan_api_client import PANApiClient, get_client_from_env
+import io
+
+def safe_shap_waterfall(shap_values, height=400):
+    """Render SHAP waterfall safely — falls back to bar chart if waterfall bugs out."""
+    try:
+        st_shap(shap.plots.waterfall(shap_values), height=height)
+    except (IndexError, TypeError, AttributeError):
+        vals = shap_values.values
+        feats = shap_values.feature_names if hasattr(shap_values, 'feature_names') else [f'F{i}' for i in range(len(vals))]
+        order = np.argsort(np.abs(vals))
+        fig, ax = plt.subplots(figsize=(6, max(4, len(vals)*0.28)), facecolor='#0d1929')
+        ax.set_facecolor('#081422')
+        colors = ['#22c55e' if v < 0 else '#ef4444' for v in vals[order]]
+        ax.barh([feats[i] for i in order], vals[order], color=colors, height=0.6)
+        ax.set_xlabel('SHAP Value (impact on risk)', color='#4a6080', fontsize=9)
+        ax.tick_params(colors='#94a3b8', labelsize=8)
+        for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+        ax.axvline(x=0, color='#4a6080', linewidth=0.5)
+        plt.tight_layout()
+        st.pyplot(fig)
+        plt.close(fig)
 
 # ─────────────────────────────────────────────
 #  PAGE CONFIG
@@ -37,8 +58,9 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 section[data-testid="stSidebar"] > div { background: #070c18; border-right: 1px solid #1a2540; }
 .block-container { padding: 1.5rem 2rem; max-width: 1400px; }
 
-/* ── Hide default header ── */
-#MainMenu, header, footer { visibility: hidden; }
+/* ── Hide default menu/footer but keep sidebar toggle ── */
+#MainMenu, footer { visibility: hidden; }
+header { background: transparent !important; }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0a0f1e; }
@@ -171,9 +193,9 @@ button[kind="primary"]:hover { transform: translateY(-2px) !important;
 /* ── Tabs ── */
 .stTabs [data-baseweb="tab-list"] { background: #0d1929 !important;
     border-radius: 12px !important; padding: 4px !important;
-    border: 1px solid #1a2d4a !important; }
+    border: 1px solid #1a2d4a !important; gap: 0 !important; }
 .stTabs [data-baseweb="tab"] { color: #4a6080 !important; font-weight: 600 !important;
-    border-radius: 8px !important; }
+    border-radius: 8px !important; flex: 1 !important; justify-content: center !important; }
 .stTabs [aria-selected="true"] { background: linear-gradient(135deg,#1a3050,#1e3a5f) !important;
     color: #f0c040 !important; }
 
@@ -233,11 +255,15 @@ with st.sidebar:
 
     st.markdown("""
     <div style="padding:0 8px 16px;">
-        <div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-left:8px;">Navigation</div>
-        <div class="nav-item active"><span class="icon">🆔</span><span class="label">Credit Score Check</span></div>
-        <div class="nav-item"><span class="icon">👤</span><span class="label">Underwriter Dashboard</span></div>
-        <div class="nav-item"><span class="icon">🌍</span><span class="label">Portfolio Analytics</span></div>
-        <div class="nav-item"><span class="icon">⚖️</span><span class="label">Fairness Audit</span></div>
+        <div style="font-size:.7rem;color:#2a3a50;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;padding-left:8px;">Quick Links</div>
+        <div style="font-size:.8rem;color:#4a6080;padding:8px;background:#050a12;border-radius:8px;border:1px solid #111d30;">
+            Use the <span style="color:#f0c040;font-weight:600;">tabs above</span> to switch between:<br><br>
+            🆔 Credit Score Check<br>
+            👤 Underwriter Dashboard<br>
+            🌍 Portfolio Analytics<br>
+            ⚖️ Fairness Audit<br>
+            🎮 What-If Simulator
+        </div>
     </div>
     <hr style="border:1px solid #111d30;margin:0 0 16px;">
     """, unsafe_allow_html=True)
@@ -627,7 +653,7 @@ with tab_pan:
 
                 st.markdown("<br>", unsafe_allow_html=True)
                 with st.expander("📊 Detailed SHAP Waterfall Chart"):
-                    st_shap(shap.plots.waterfall(sv[0]), height=420)
+                    safe_shap_waterfall(sv[0], height=420)
 
                 # ── Bureau snapshot
                 st.markdown('<div class="section-title">📋 Bureau Data Snapshot</div>', unsafe_allow_html=True)
@@ -768,7 +794,7 @@ with tab_under:
                 f"Key risk drivers: **{top2r.iloc[0]['Feature']}** and **{top2r.iloc[1]['Feature']}**. "
                 f"Strongest mitigant: **{top1s.iloc[0]['Feature']}**.")
         with st.expander("📊 SHAP Waterfall"):
-            st_shap(shap.plots.waterfall(shap_vals_global[idx]), height=400)
+            safe_shap_waterfall(shap_vals_global[idx], height=400)
 
 # ══════════════════════════════════════════════
 #  TAB 3 — PORTFOLIO ANALYTICS
@@ -800,22 +826,32 @@ with tab_global:
         ga,gb = st.columns(2)
         with ga:
             st.markdown('<div class="section-title">Top Risk Drivers (Global)</div>', unsafe_allow_html=True)
-            fig_g1, ax = plt.subplots(facecolor='#0d1929')
-            ax.set_facecolor('#081422')
+            plt.figure(facecolor='#0d1929')
             shap.summary_plot(shap_vals_global, X, plot_type="bar", show=False,
                               color='#f0c040', plot_size=None)
-            ax.tick_params(colors='#4a6080'); ax.xaxis.label.set_color('#4a6080')
-            for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
-            st.pyplot(fig_g1); plt.clf()
+            fig_g1 = plt.gcf()
+            fig_g1.set_facecolor('#0d1929')
+            for ax in fig_g1.axes:
+                ax.set_facecolor('#081422')
+                ax.tick_params(colors='#4a6080')
+                ax.xaxis.label.set_color('#4a6080')
+                for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+            st.pyplot(fig_g1)
+            plt.close(fig_g1)
 
         with gb:
             st.markdown('<div class="section-title">Directional Impact (Beeswarm)</div>', unsafe_allow_html=True)
-            fig_g2, ax2 = plt.subplots(facecolor='#0d1929')
-            ax2.set_facecolor('#081422')
+            plt.figure(facecolor='#0d1929')
             shap.summary_plot(shap_vals_global, X, show=False, plot_size=None)
-            ax2.tick_params(colors='#4a6080'); ax2.xaxis.label.set_color('#4a6080')
-            for spine in ax2.spines.values(): spine.set_edgecolor('#1a2d4a')
-            st.pyplot(fig_g2); plt.clf()
+            fig_g2 = plt.gcf()
+            fig_g2.set_facecolor('#0d1929')
+            for ax in fig_g2.axes:
+                ax.set_facecolor('#081422')
+                ax.tick_params(colors='#4a6080')
+                ax.xaxis.label.set_color('#4a6080')
+                for spine in ax.spines.values(): spine.set_edgecolor('#1a2d4a')
+            st.pyplot(fig_g2)
+            plt.close(fig_g2)
 
         # Score distribution
         st.markdown('<div class="section-title">Score Distribution</div>', unsafe_allow_html=True)
@@ -989,8 +1025,10 @@ with tab_sim:
                 sim_feats[feat_key] = opts.index(sel)
 
     with sim_right:
-        # Live prediction
+        # Live prediction — columns MUST match training order
         sim_idf   = pd.DataFrame([sim_feats])
+        if X is not None:
+            sim_idf = sim_idf[X.columns]
         sim_prob  = model.predict_proba(sim_idf)[0][1]
         sim_score = cibil(sim_prob)
         sim_g, sim_color, _, sim_ico = grade(sim_score)
@@ -1089,10 +1127,10 @@ with tab_sim:
             sc1, sc2 = st.columns(2)
             with sc1:
                 st.caption("**Baseline**")
-                st_shap(shap.plots.waterfall(sv_base[0]), height=340)
+                safe_shap_waterfall(sv_base[0], height=340)
             with sc2:
                 st.caption("**After Changes**")
-                st_shap(shap.plots.waterfall(sv_sim[0]),  height=340)
+                safe_shap_waterfall(sv_sim[0],  height=340)
 
         # Auto-recommendations
         st.markdown('<div class="section-title" style="font-size:.95rem;margin-top:16px;">💡 Top Actions to Improve</div>', unsafe_allow_html=True)
