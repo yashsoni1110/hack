@@ -333,9 +333,18 @@ def load_data():
     p = 'data/processed_credit_data.csv'
     return pd.read_csv(p) if os.path.exists(p) else None
 
+# @st.cache_resource
+# def load_model():
+#     with open('model.pkl', 'rb') as f:
+#         return pickle.load(f)
 @st.cache_resource
 def load_model():
-    with open('model.pkl', 'rb') as f:
+    base_path = os.path.dirname(__file__)
+    model_path = os.path.join(base_path, 'model.pkl')
+    if not os.path.exists(model_path):
+        st.error(f"❌ Could not find model at: {model_path}")
+        st.stop()
+    with open(model_path, 'rb') as f:
         return pickle.load(f)
 
 @st.cache_resource
