@@ -1035,9 +1035,16 @@ with tab_sim:
 
     with sim_right:
         # Live prediction — columns MUST match training order
+        FEATURE_ORDER = [
+            'checking_status', 'duration', 'credit_history', 'purpose',
+            'credit_amount', 'savings_status', 'employment', 'installment_commitment',
+            'personal_status', 'other_parties', 'residence_since', 'property_magnitude',
+            'age', 'other_payment_plans', 'housing', 'existing_credits',
+            'job', 'num_dependents', 'own_telephone', 'foreign_worker'
+        ]
         sim_idf   = pd.DataFrame([sim_feats])
-        if X is not None:
-            sim_idf = sim_idf[X.columns]
+        col_order = list(X.columns) if X is not None else FEATURE_ORDER
+        sim_idf   = sim_idf[col_order]
         sim_prob  = model.predict_proba(sim_idf)[0][1]
         sim_score = cibil(sim_prob)
         sim_g, sim_color, _, sim_ico = grade(sim_score)
