@@ -91,20 +91,22 @@ header { background: transparent !important; }
 /* ── KPI Cards ── */
 .kpi-card {
     background: #111827;
-    border: 1px solid #1F2937; border-radius: 16px; padding: 24px;
+    border: 1px solid #1F2937; border-radius: 16px; padding: 18px 20px;
     position: relative; overflow: hidden; transition: all .3s ease;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    min-height: 130px; display: flex; flex-direction: column; justify-content: center;
 }
 .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border-color: #374151; }
 .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:4px;
     background: linear-gradient(90deg, #6366F1, #06B6D4); border-radius: 16px 16px 0 0; opacity: 0.9;}
-.kpi-label { font-size: 0.75rem; color: #9CA3AF; text-transform: uppercase;
-    letter-spacing: 1px; font-weight: 600; }
-.kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 2.2rem;
-    font-weight: 700; color: #F3F4F6; margin: 8px 0 4px; line-height: 1.1;}
-.kpi-sub { font-size: 0.8rem; color: #10B981; font-weight: 500; }
-.kpi-icon { position: absolute; right: 24px; top: 24px; font-size: 2rem; opacity: 0.15; filter: grayscale(100%); transition: all .3s; }
-.kpi-card:hover .kpi-icon { opacity: 0.4; filter: grayscale(0%); transform: scale(1.1); }
+.kpi-label { font-size: 0.7rem; color: #9CA3AF; text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 700; opacity: 0.8; margin-bottom: 4px; }
+.kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.4rem, 4vw, 1.8rem);
+    font-weight: 700; color: #F3F4F6; margin: 4px 0; line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-sub { font-size: 0.75rem; color: #10B981; font-weight: 600; }
+.kpi-icon { position: absolute; right: 16px; top: 16px; font-size: 1.5rem; opacity: 0.15; transition: all .3s; }
+.kpi-card:hover .kpi-icon { opacity: 0.4; transform: scale(1.1); }
 
 /* ── Glass Card ── */
 .glass-card {
