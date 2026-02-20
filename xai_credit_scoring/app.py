@@ -576,7 +576,7 @@ with tab_pan:
                             {'✅ AUTO-APPROVED' if r['score']>=750 else ('⚠️ MANUAL REVIEW' if r['score']>=600 else '❌ REJECTED')}
                         </span></div>
                         <div style="font-size:.75rem;color:#2a3a50;margin-top:12px;">
-                            Default Risk: <span style="color:{r['color']};font-weight:600;">{round(r['prob']*100,1)}%</span>
+                            Default Risk: <span style="color:{r['color']};font-weight:600;">{round(float(r['prob'])*100,2)}%</span>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -612,7 +612,7 @@ with tab_pan:
                 k1,k2,k3,k4 = st.columns(4)
                 k_data = [
                     ("Credit Score", r['score'], "300–900 range", "🎯"),
-                    ("Default Risk", f"{round(r['prob']*100,1)}%", "Probability", "📉"),
+                    ("Default Risk", f"{round(float(r['prob'])*100,2)}%", "Probability", "📉"),
                     ("Age Factor", r['feats']['age'], "Years", "👤"),
                     ("Credit Amount", f"₹{r['feats']['credit_amount']:,}", "Loan amount", "💰"),
                 ]
@@ -758,7 +758,7 @@ with tab_under:
         m1,m2,m3,m4 = st.columns(4)
         for col_m,(lbl,val,ico) in zip([m1,m2,m3,m4],[
             ("CIBIL Score", score_u, "🎯"),
-            ("Default Risk", f"{round(prob_u*100,1)}%", "📉"),
+            ("Default Risk", f"{round(float(prob_u)*100,2)}%", "📉"),
             ("Age", int(app_data['age'].values[0]), "👤"),
             ("Credit Amount", f"₹{int(app_data['credit_amount'].values[0]):,}", "💰")
         ]):
@@ -801,7 +801,7 @@ with tab_under:
         sv_u = shap_vals_global[idx].values
         cont_u = pd.DataFrame({'Feature':X.columns,'Impact':sv_u}).sort_values('Impact',ascending=False)
         top2r = cont_u.head(2); top1s = cont_u.tail(1)
-        st.info(f"**AI Summary**: Applicant #{idx} has a **{round(prob_u*100,1)}%** default probability. "
+        st.info(f"**AI Summary**: Applicant #{idx} has a **{round(float(prob_u)*100,2)}%** default probability. "
                 f"Key risk drivers: **{top2r.iloc[0]['Feature']}** and **{top2r.iloc[1]['Feature']}**. "
                 f"Strongest mitigant: **{top1s.iloc[0]['Feature']}**.")
         with st.expander("📊 SHAP Waterfall"):
