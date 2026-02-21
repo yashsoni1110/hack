@@ -494,8 +494,8 @@ with tab_pan:
                     feats['duration']         = ov_dur
                     feats['credit_amount']    = ov_amt
                     feats['age']             = ov_age
-                    feats['checking_status'] = ["No Account","< ₹0","₹0–₹200","> ₹200"].index(ov_chk)
-                    feats['savings_status']  = ["No Savings","< ₹100","₹100–₹500","₹500–₹1000","> ₹1000"].index(ov_sav)
+                    feats['checking_status'] = ["No Account","< ₹10000","₹10000–₹50000","₹50000–₹100000","> ₹100000"].index(ov_chk)
+                    feats['savings_status']  = ["No Savings","< ₹10000","₹10000–₹50000","₹50000–₹100000","> ₹100000"].index(ov_sav)
                     feats['employment']      = ["Unemployed","<1 Yr","1–4 Yr","4–7 Yr",">7 Yr"].index(ov_emp)
                 else:
                     feats['age'] = u_age if not profile.name or profile.name == "Unknown" else profile.to_model_input()['age']
