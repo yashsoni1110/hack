@@ -465,8 +465,8 @@ with tab_pan:
                 ov_amt = st.number_input("Credit Amount (₹)", 500, 200000, 10000, 500)
                 ov_age = st.slider("Age (override)", 18, 80, 35)
             with a2:
-                ov_chk = st.selectbox("Checking Account",["No Account","< ₹0","₹0–₹200","> ₹200"])
-                ov_sav = st.selectbox("Savings Account",["No Savings","< ₹100","₹100–₹500","₹500–₹1000","> ₹1000"])
+                ov_chk = st.selectbox("Current Account",["No Account","< ₹10000","₹10000–₹50000","₹50000–₹100000","> ₹100000"])
+                ov_sav = st.selectbox("Savings Account",["No Savings","< ₹10000","₹10000–₹50000","₹50000–₹100000","> ₹100000"])
                 ov_emp = st.selectbox("Employment Duration",["Unemployed","<1 Yr","1–4 Yr","4–7 Yr",">7 Yr"])
             use_ov = st.checkbox("Use my manual entries", value=False)
 
